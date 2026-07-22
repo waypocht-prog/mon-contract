@@ -62,5 +62,6 @@ export default {
   deal_close:"ЖамӀ билгалде", close_h:"ГӀуллакх муха чекхделира?", st_paid:"Дина а, мехге дина а", st_done:"Дина (мехге доцуш)", st_cancel:"Юхадаьккхина",
   close_paid:"Бакъдолуш мел ахча эцна (€)", close_note:"Муха чекхделира (билгало)", close_note_ph:"дукхха доцуш: муха чекхделира", close_save:"Архиве Ӏалашде",
   meta_paid:"эцна", meta_done_at:"дӏакъевлина", meta_by:"мила", t_archived:"Архивехь ✓",
-  login_title:"Чувала", login_sub:"Чувала, хьайн хаамаш Ӏалашбина муьлхха телефона тӏехь карабархьама.", login_google:"Google-ца чувала", signout:"Аравала"
+  login_title:"Чувала", login_sub:"Чувала, хьайн хаамаш Ӏалашбина муьлхха телефона тӏехь карабархьама.", login_google:"Google-ца чувала", signout:"Аравала",
+  sync_synced:"Ӏалашдина", sync_saving:"Ӏалашдо…", sync_offline:"Офлайн"
 };

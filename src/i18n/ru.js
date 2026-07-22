@@ -62,5 +62,6 @@ export default {
   deal_close:"Отметить итог", close_h:"Чем закончилось дело?", st_paid:"Выполнено и оплачено", st_done:"Выполнено (без оплаты)", st_cancel:"Отменено",
   close_paid:"Сколько реально получено (€)", close_note:"Как закончилось (заметка)", close_note_ph:"коротко: чем закончилось", close_save:"Сохранить в архив",
   meta_paid:"получено", meta_done_at:"закрыто", meta_by:"кто", t_archived:"В архиве ✓",
-  login_title:"Вход", login_sub:"Войди, чтобы твои данные сохранялись и были доступны на любом телефоне.", login_google:"Войти через Google", signout:"Выйти"
+  login_title:"Вход", login_sub:"Войди, чтобы твои данные сохранялись и были доступны на любом телефоне.", login_google:"Войти через Google", signout:"Выйти",
+  sync_synced:"В облаке", sync_saving:"Сохраняю…", sync_offline:"Офлайн"
 };

@@ -3,8 +3,8 @@
 import { store, $, esc, todayStr, monthKey, daysBetween, pad2, toast } from "./core/store.js";
 import { L, LANGS, getLang, t, applyStatic, setLang, onLangChange } from "./i18n/index.js";
 import { cloudEnabled } from "./core/supabase.js";
-import { getUser, signInGoogle, signOut } from "./core/auth.js";
-import { hydrate, setUid, flushQueue } from "./core/cloud.js";
+import { getUser, signInGoogle, signOut, onAuth } from "./core/auth.js";
+import { hydrate, setUid, flushQueue, onSyncStatus } from "./core/cloud.js";
 
 /* ===================== PROFILE ===================== */
 let profile = store.get("profile", { name: "" });
@@ -99,6 +99,7 @@ function renderToday() {
   const h = d.getHours();
   const g = h < 5 ? t("greet_night") : h < 12 ? t("greet_morning") : h < 18 ? t("greet_day") : t("greet_evening");
   $("#t-hi").textContent = g + ", " + profName();
+  const av = $("#t-avatar"); if (av) av.textContent = (profName().trim()[0] || "?").toUpperCase();
   const s = computeStreak();
   $("#t-streak").textContent = s.count; $("#t-streak-w").textContent = pluralDay(s.count);
   $("#t-flame").textContent = s.count >= 1 ? "🔥" : "🕯️";
@@ -348,25 +349,53 @@ function startApp() {
   renderProgram();
   renderLog();
   renderToday();
-  if (cloudEnabled) { const lb = $("#logout-btn"); if (lb) lb.style.display = "block"; }
+  if (cloudEnabled) {
+    const lb = $("#logout-btn"); if (lb) lb.style.display = "block";
+    const lh = $("#logout"); if (lh) lh.style.display = "grid";
+    const sy = $("#sync"); if (sy) sy.style.display = "inline-flex";
+    onSyncStatus(renderSync);
+  }
   if (!profile.name) showOnboard(false);
 }
 
-async function boot() {
-  if (cloudEnabled) {
-    let user = null;
-    try { user = await getUser(); } catch (e) {}
-    if (!user) { showLogin(); return; }
-    setUid(user.id);
-    try { await hydrate(user.id); } catch (e) {}
-    profile = store.get("profile", { name: "" });
-    if (!profile.name) {
-      profile.name = (user.user_metadata && user.user_metadata.full_name) || (user.email ? user.email.split("@")[0] : "");
-      store.set("profile", profile);
-    }
-    flushQueue();
+function renderSync(s) {
+  const el = $("#sync"); if (!el) return;
+  const map = { synced: "ok", saving: "saving", offline: "off" };
+  el.className = "sync " + (map[s] || "off");
+  el.textContent = t(s === "saving" ? "sync_saving" : s === "offline" ? "sync_offline" : "sync_synced");
+}
+
+async function afterLogin(user) {
+  setUid(user.id);
+  // Сначала отправляем накопленные офлайн-изменения, потом тянем облако —
+  // иначе hydrate перезапишет локальные правки, и они потеряются.
+  try { await flushQueue(); } catch (e) {}
+  try { await hydrate(user.id); } catch (e) {}
+  profile = store.get("profile", { name: "" });
+  if (!profile.name) {
+    profile.name = (user.user_metadata && user.user_metadata.full_name) || (user.email ? user.email.split("@")[0] : "");
+    store.set("profile", profile);
   }
   startApp();
+}
+
+async function boot() {
+  if (!cloudEnabled) { startApp(); return; }
+  let done = false;
+  // Реагируем на завершение входа — в т.ч. когда токен приходит в URL после возврата с Google.
+  onAuth((user) => { if (!done && user) { done = true; afterLogin(user); } });
+  // Сразу пробуем текущую сессию.
+  let user = null;
+  try { user = await getUser(); } catch (e) {}
+  if (user && !done) { done = true; afterLogin(user); return; }
+  // Если сессии ещё нет — даём клиенту секунду обработать токен из URL, потом показываем вход.
+  setTimeout(async () => {
+    if (done) return;
+    let u = null;
+    try { u = await getUser(); } catch (e) {}
+    if (u) { done = true; afterLogin(u); }
+    else showLogin();
+  }, 1000);
 }
 
 boot();

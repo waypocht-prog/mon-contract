@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#14171C">
+<link rel="stylesheet" href="/src/styles/tokens.css">
+<link rel="stylesheet" href="/src/styles/components.css">
 </head>
 <body>
 <header>
@@ -15,6 +17,7 @@
     <div><b data-i18n="brand_name">Мой договор</b><span data-i18n="brand_tag">сначала цена — потом работа</span></div>
   </div>
   <div class="hbtns">
+    <button class="hbtn ico" id="logout" style="display:none" onclick="doSignOut()" aria-label="logout"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
     <button class="hbtn" id="lang" aria-label="language">FR</button>
     <button class="hbtn ico" id="theme" aria-label="theme">◐</button>
   </div>
@@ -23,7 +26,7 @@
 <main>
   <section class="view active" id="v-today">
     <div id="t-home">
-      <div class="greet"><div class="date" id="t-date"></div><h1 id="t-hi"></h1></div>
+      <div class="greet"><span class="avatar" id="t-avatar" aria-hidden="true"></span><div class="gtext"><div class="date" id="t-date"></div><h1 id="t-hi"></h1></div><span class="sync" id="sync" style="display:none"></span></div>
       <div class="streak">
         <span class="flame" id="t-flame">🔥</span>
         <div><div class="big"><span id="t-streak" class="mono">0</span> <span style="font-size:15px;font-family:system-ui" id="t-streak-w"></span></div><div class="sub" data-i18n="streak_sub"></div></div>

@@ -62,5 +62,6 @@ export default {
   deal_close:"Clôturer", close_h:"Comment ça s'est terminé ?", st_paid:"Fait et payé", st_done:"Fait (non payé)", st_cancel:"Annulé",
   close_paid:"Montant réellement reçu (€)", close_note:"Comment ça s'est terminé (note)", close_note_ph:"en bref : le résultat", close_save:"Enregistrer dans les archives",
   meta_paid:"reçu", meta_done_at:"clôturé", meta_by:"par", t_archived:"Archivé ✓",
-  login_title:"Connexion", login_sub:"Connecte-toi pour que tes données soient sauvegardées et accessibles sur n'importe quel téléphone.", login_google:"Se connecter avec Google", signout:"Se déconnecter"
+  login_title:"Connexion", login_sub:"Connecte-toi pour que tes données soient sauvegardées et accessibles sur n'importe quel téléphone.", login_google:"Se connecter avec Google", signout:"Se déconnecter",
+  sync_synced:"Sauvegardé", sync_saving:"Sauvegarde…", sync_offline:"Hors ligne"
 };

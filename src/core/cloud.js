@@ -11,6 +11,12 @@ function qset(v) { localStorage.setItem(QKEY, JSON.stringify(v)); }
 
 export function setUid(id) { _uid = id; }
 
+// Статус синхронизации: "synced" | "saving" | "offline".
+let _status = "synced";
+const _subs = [];
+function setStatus(s) { _status = s; _subs.forEach((f) => { try { f(s); } catch (e) {} }); }
+export function onSyncStatus(fn) { _subs.push(fn); try { fn(_status); } catch (e) {} }
+
 // Загрузка всех данных пользователя из облака в localStorage.
 export async function hydrate(userId) {
   if (!supabase) return;
@@ -27,6 +33,8 @@ export function pushChange(k) {
   const q = qget();
   q.push({ k });
   qset(q);
+  if (typeof navigator !== "undefined" && navigator.onLine === false) { setStatus("offline"); return; }
+  setStatus("saving");
   flushQueue();
 }
 
@@ -34,7 +42,8 @@ export function pushChange(k) {
 export async function flushQueue() {
   if (!supabase || !_uid) return;
   const q = qget();
-  if (!q.length) return;
+  if (!q.length) { setStatus(navigator.onLine === false ? "offline" : "synced"); return; }
+  if (typeof navigator !== "undefined" && navigator.onLine === false) { setStatus("offline"); return; }
   const keys = [...new Set(q.map((x) => x.k))];
   const rows = keys.map((k) => {
     let v = null;
@@ -42,9 +51,10 @@ export async function flushQueue() {
     return { user_id: _uid, k, v };
   });
   const { error } = await supabase.from("kv").upsert(rows, { onConflict: "user_id,k" });
-  if (!error) qset([]);
+  if (!error) { qset([]); setStatus("synced"); } else { setStatus("offline"); }
 }
 
 if (typeof addEventListener !== "undefined") {
   addEventListener("online", () => flushQueue());
+  addEventListener("offline", () => setStatus("offline"));
 }
