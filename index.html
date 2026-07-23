@@ -131,10 +131,11 @@
     <div class="ob-brand" data-i18n="brand_name"></div>
     <h2 data-i18n="login_title"></h2>
     <p data-i18n="login_sub"></p>
-    <button class="btn gbtn" onclick="signInGoogle()">
+    <button class="btn gbtn" id="google-login-btn" type="button" onclick="beginGoogleSignIn()">
       <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.6 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.9 6.1C12.3 13.3 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9.1h12.4c-.5 2.9-2.1 5.3-4.6 7l7.1 5.5c4.1-3.8 6.4-9.4 6.4-16.1z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.7-2.9-.7-4.6s.3-3.2.7-4.6l-7.9-6.1C1 16.5 0 20.1 0 24s1 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.3-5.5l-7.1-5.5c-2 1.4-4.6 2.2-8.2 2.2-6.3 0-11.7-3.8-13.5-9.4l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
       <span data-i18n="login_google"></span>
     </button>
+    <p class="auth-error" id="auth-error" role="alert" aria-live="polite" style="display:none"></p>
   </div>
 </div>
 

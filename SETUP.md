@@ -39,8 +39,10 @@
 1. Supabase → **Authentication → Providers → Google** → включить;
 2. вставить **Client ID** и **Client Secret** → Save.
 3. Supabase → **Authentication → URL Configuration**:
-   - **Site URL** — пока `http://localhost:5173` (позже поменяешь на адрес Vercel);
-   - **Redirect URLs** — добавить `http://localhost:5173` и (позже) адрес Vercel.
+   - **Site URL**: `https://mon-contract.vercel.app`
+   - **Redirect URLs** (добавить оба):
+     - `http://localhost:5173/**`
+     - `https://mon-contract.vercel.app/**`
 
 ---
 
@@ -64,10 +66,10 @@ npm run dev
 3. Vercel сам определит **Vite**. В разделе **Environment Variables** добавить те же два:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-4. **Deploy** → получить адрес вида `https://moy-dogovor.vercel.app`.
+4. **Deploy** → боевой адрес: `https://mon-contract.vercel.app`.
 5. **Дописать этот адрес в трёх местах** (иначе Google-вход не сработает на боевом сайте):
-   - Google Cloud → Credentials → твой OAuth client → **Authorized JavaScript origins** → добавить адрес Vercel;
-   - Supabase → Authentication → **URL Configuration → Site URL** = адрес Vercel; в **Redirect URLs** добавить его же;
+   - Google Cloud → Credentials → твой OAuth client → **Authorized JavaScript origins** → добавить `https://mon-contract.vercel.app`;
+   - Supabase → Authentication → **URL Configuration → Site URL** = `https://mon-contract.vercel.app`; в **Redirect URLs** добавить `https://mon-contract.vercel.app/**`;
 6. Открыть адрес Vercel на телефоне → войти через Google → добавить на экран «Домой».
 
 Готово. Теперь у каждого свои данные в облаке, вход по Google, доступ с любого телефона.
@@ -78,3 +80,11 @@ npm run dev
 - **«redirect_uri_mismatch»** при входе → в Google Cloud не добавлен `https://ВАШ-ПРОЕКТ.supabase.co/auth/v1/callback` в Redirect URIs.
 - **Вход проходит, но возвращает не на сайт** → в Supabase → URL Configuration не указан Site URL / Redirect URL с адресом сайта.
 - **Кнопки входа нет, сразу приложение** → не заданы переменные `VITE_SUPABASE_*` (тогда включается локальный режим — это нормально для теста без бэкенда).
+
+---
+
+## Диагностика Google-входа
+
+Приложение обрабатывает OAuth callback **вручную и детерминированно**: основной путь — современный **PKCE** (`?code=...`, обмен через `exchangeCodeForSession`), при этом сохранена поддержка старого implicit-callback (`#access_token=...`). Ошибки OAuth показываются прямо под кнопкой «Войти через Google».
+
+Полное описание причины прежнего бага, что именно изменено и какие production-настройки обязательны — в **[AUTH_FIX.md](AUTH_FIX.md)**.

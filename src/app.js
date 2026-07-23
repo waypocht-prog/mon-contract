@@ -3,7 +3,7 @@
 import { store, $, esc, todayStr, monthKey, daysBetween, pad2, toast } from "./core/store.js";
 import { L, LANGS, getLang, t, applyStatic, setLang, onLangChange } from "./i18n/index.js";
 import { cloudEnabled } from "./core/supabase.js";
-import { getUser, signInGoogle, signOut, onAuth, consumeUrlToken } from "./core/auth.js";
+import { getUser, signInGoogle, signOut, onAuth, consumeAuthCallback } from "./core/auth.js";
 import { hydrate, setUid, flushQueue, onSyncStatus } from "./core/cloud.js";
 
 /* ===================== PROFILE ===================== */
@@ -329,14 +329,54 @@ Object.assign(window, {
   openAudit, saveAudit, closeAudit, delPrice, toStep2, endRitual, pick,
   renderStep, finish, useprice, clearLog, openClose, setCS, saveClose,
   cancelClose, toggleWeek, gate, copyText, flowBack, cancelOnboard,
-  signInGoogle, doSignOut,
+  beginGoogleSignIn, doSignOut,
 });
 
 /* ===================== AUTH GATE + INIT ===================== */
-function showLogin() { applyStatic(); $("#login").style.display = "flex"; }
+// Понятный текст вместо технической ошибки OAuth.
+function authMessage(error) {
+  if (!error) return "";
+  const message = error?.message || String(error);
+  if (/code verifier|pkce/i.test(message)) {
+    return "Не удалось завершить вход: сайт вернулся на другой домен. Проверь Redirect URLs в Supabase.";
+  }
+  if (/redirect|not allowed|mismatch/i.test(message)) {
+    return "Адрес сайта не разрешён для Google-входа. Проверь Redirect URLs в Supabase и Google Cloud.";
+  }
+  return message;
+}
+
+function showLogin(error = "") {
+  applyStatic();
+  $("#login").style.display = "flex";
+  const errorEl = $("#auth-error");
+  if (errorEl) {
+    errorEl.textContent = authMessage(error);
+    errorEl.style.display = error ? "block" : "none";
+  }
+  const button = $("#google-login-btn");
+  if (button) button.disabled = false;
+}
+
+async function beginGoogleSignIn() {
+  const button = $("#google-login-btn");
+  const errorEl = $("#auth-error");
+  if (button) button.disabled = true;
+  if (errorEl) errorEl.style.display = "none";
+  try {
+    await signInGoogle();
+  } catch (error) {
+    console.error("[auth] signInWithOAuth error:", error);
+    showLogin(error);
+  }
+}
 
 async function doSignOut() {
-  try { await signOut(); } catch (e) {}
+  try {
+    await signOut();
+  } catch (error) {
+    console.error("[auth] signOut error:", error);
+  }
   Object.keys(localStorage).forEach((k) => { if (k.startsWith("md_")) localStorage.removeItem(k); });
   location.reload();
 }
@@ -381,26 +421,36 @@ async function afterLogin(user) {
 
 async function boot() {
   if (!cloudEnabled) { startApp(); return; }
-  let done = false;
-  // 1) Вернулись с Google? Забираем токен из адреса вручную — надёжнее автоподхвата Supabase.
+
+  let completed = false;
+  const finishLogin = async (user) => {
+    if (completed || !user) return;
+    completed = true;
+    await afterLogin(user);
+  };
+
+  // 1) Сначала — обработка OAuth callback (PKCE ?code=... / implicit #access_token=... / ошибки).
+  const callback = await consumeAuthCallback();
+  if (callback.error) { showLogin(callback.error); return; }
+  if (callback.user) { await finishLogin(callback.user); return; }
+
+  // 2) Иначе — проверяем уже сохранённую сессию.
+  let user = null;
   try {
-    const u = await consumeUrlToken();
-    if (u) { done = true; afterLogin(u); return; }
-  } catch (e) {}
-  // 2) Иначе слушаем события: Supabase шлёт INITIAL_SESSION с итоговой сессией, затем SIGNED_IN.
-  onAuth((event, user) => {
-    if (done) return;
-    if (user) { done = true; afterLogin(user); }
-    else if (event === "INITIAL_SESSION") { showLogin(); } // старт без сессии — показываем вход
+    user = await getUser();
+  } catch (error) {
+    console.error("[auth] getSession error:", error);
+    showLogin(error);
+    return;
+  }
+  if (user) { await finishLogin(user); return; }
+
+  // 3) Сессии нет — показываем вход и слушаем только будущие изменения.
+  showLogin();
+  onAuth((event, u) => {
+    if (u) finishLogin(u);
+    else if (event === "SIGNED_OUT") showLogin();
   });
-  // Страховка: если событие почему-то не пришло за 4 сек — проверяем сессию напрямую.
-  setTimeout(async () => {
-    if (done) return;
-    let u = null;
-    try { u = await getUser(); } catch (e) {}
-    if (u) { done = true; afterLogin(u); }
-    else showLogin();
-  }, 4000);
 }
 
 boot();

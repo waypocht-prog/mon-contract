@@ -11,8 +11,8 @@ export const supabase =
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          detectSessionInUrl: false, // токен из URL забираем сами (consumeUrlToken) — детерминированно
-          flowType: "implicit",
+          detectSessionInUrl: false, // callback обрабатываем сами в consumeAuthCallback
+          flowType: "pkce",
         },
       })
     : null;
