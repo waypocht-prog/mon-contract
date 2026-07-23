@@ -11,7 +11,7 @@ export const supabase =
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          detectSessionInUrl: true, // подхватывать токен из URL после возврата с Google
+          detectSessionInUrl: false, // токен из URL забираем сами (consumeUrlToken) — детерминированно
           flowType: "implicit",
         },
       })
