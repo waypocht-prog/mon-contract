@@ -3,7 +3,7 @@
 import { store, $, esc, todayStr, monthKey, daysBetween, pad2, toast } from "./core/store.js";
 import { L, LANGS, getLang, t, applyStatic, setLang, onLangChange } from "./i18n/index.js";
 import { cloudEnabled } from "./core/supabase.js";
-import { getUser, signInGoogle, signOut, onAuth } from "./core/auth.js";
+import { getUser, signInGoogle, signOut, onAuth, consumeUrlToken } from "./core/auth.js";
 import { hydrate, setUid, flushQueue, onSyncStatus } from "./core/cloud.js";
 
 /* ===================== PROFILE ===================== */
@@ -382,9 +382,12 @@ async function afterLogin(user) {
 async function boot() {
   if (!cloudEnabled) { startApp(); return; }
   let done = false;
-  // Событийный вход — надёжнее таймера. Supabase сам обрабатывает токен из URL
-  // (в т.ч. возврат с Google) и один раз шлёт INITIAL_SESSION с итоговой сессией,
-  // затем SIGNED_IN. Ждём событие, а не гадаем по секундомеру.
+  // 1) Вернулись с Google? Забираем токен из адреса вручную — надёжнее автоподхвата Supabase.
+  try {
+    const u = await consumeUrlToken();
+    if (u) { done = true; afterLogin(u); return; }
+  } catch (e) {}
+  // 2) Иначе слушаем события: Supabase шлёт INITIAL_SESSION с итоговой сессией, затем SIGNED_IN.
   onAuth((event, user) => {
     if (done) return;
     if (user) { done = true; afterLogin(user); }
