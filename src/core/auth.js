@@ -22,5 +22,5 @@ export async function signOut() {
 
 export function onAuth(cb) {
   if (!supabase) return;
-  supabase.auth.onAuthStateChange((_e, session) => cb(session?.user ?? null));
+  supabase.auth.onAuthStateChange((event, session) => cb(event, session?.user ?? null));
 }

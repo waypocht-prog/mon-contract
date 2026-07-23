@@ -382,20 +382,22 @@ async function afterLogin(user) {
 async function boot() {
   if (!cloudEnabled) { startApp(); return; }
   let done = false;
-  // Реагируем на завершение входа — в т.ч. когда токен приходит в URL после возврата с Google.
-  onAuth((user) => { if (!done && user) { done = true; afterLogin(user); } });
-  // Сразу пробуем текущую сессию.
-  let user = null;
-  try { user = await getUser(); } catch (e) {}
-  if (user && !done) { done = true; afterLogin(user); return; }
-  // Если сессии ещё нет — даём клиенту секунду обработать токен из URL, потом показываем вход.
+  // Событийный вход — надёжнее таймера. Supabase сам обрабатывает токен из URL
+  // (в т.ч. возврат с Google) и один раз шлёт INITIAL_SESSION с итоговой сессией,
+  // затем SIGNED_IN. Ждём событие, а не гадаем по секундомеру.
+  onAuth((event, user) => {
+    if (done) return;
+    if (user) { done = true; afterLogin(user); }
+    else if (event === "INITIAL_SESSION") { showLogin(); } // старт без сессии — показываем вход
+  });
+  // Страховка: если событие почему-то не пришло за 4 сек — проверяем сессию напрямую.
   setTimeout(async () => {
     if (done) return;
     let u = null;
     try { u = await getUser(); } catch (e) {}
     if (u) { done = true; afterLogin(u); }
     else showLogin();
-  }, 1000);
+  }, 4000);
 }
 
 boot();
